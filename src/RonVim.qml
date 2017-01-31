@@ -2,6 +2,7 @@ import QtQuick 2.6
 import QtQuick.Controls 1.0
 import QtQuick.Dialogs 1.2
 import QtQuick.Layouts 1.3
+import QtQml 2.2
 
 import BackendModule 1.0
 
@@ -64,7 +65,7 @@ ApplicationWindow {
             MenuItem {
                 text: qsTr("Quit")
                
-                onTriggered: root.quit();
+                onTriggered: window.quit();
             }
         }
         Menu {
@@ -127,6 +128,7 @@ ApplicationWindow {
         orientation: Qt.Horizontal;
         anchors.fill: parent;
 
+
         Rectangle {
             id: leftTab ;
             Layout.minimumWidth: 20;
@@ -141,26 +143,41 @@ ApplicationWindow {
             visible:  false;
         }
 
+
         function showLeftTab() {
             leftTab.visible = true;
         }
 
         function newTab() {
-            frontend.run_command("new_file");
             rightTab.visible = true;
-            rightTab.insertTab(0, "newfile *", editorTab)
+            var editor = rightTab.addTab( "newfile *", classEditorTab).children[0]
+
         }
         function openTab() {
-            frontend.run_command("prompt_open_file");
             rightTab.visible = true;
-            rightTab.insertTab(0, "/etc/passwd", editorTab)
-            var x = rightTab.getTab(0).children[0].open("/etc/passwd");
+            var editor = rightTab.addTab("-", classEditorTab).children[0]
+            var op = classFileDialog.createObject(window, {callback: editor} );
+            op.open();
         }
     }
 
     Component {
-        id: editorTab;
+        id: classFileDialog
+        FileDialog {
+            id: fileDialog;
+            title: "Choose a file";
+            folder: shortcuts.home;
+            property var callback;
+            onAccepted: {
+                callback.fileUrl = fileUrl
+            }
+        }
+    }
+
+    Component {
+        id: classEditorTab;
         TextEdit {
+            property url fileUrl
             id: editorText
             anchors.fill: parent;
             selectByMouse : true;
@@ -169,19 +186,21 @@ ApplicationWindow {
             textFormat : TextEdit.PlainText;
             Keys.onPressed: keypressed(event);
 
-            property string filename: "newfile";
+            onFileUrlChanged: {
+                title: fileUrl;
+                backend.open(fileUrl.toString());
+            }
 
             function keypressed(event) {
                backend.handle_input(event.text, event.key, event.modifiers, event.nativeScanCode);
-            }
-            function open(path) {
-                backend.open(path);
             }
 
             RsBackend {
                 id: backend;
                 text: editorText.text;
-                filename: editorText.filename;
+                cursor_position: editorText.cursorPosition;
+                selection_start: editorText.selectionStart;
+                selection_end: editorText.selectionEnd;
             }
         }
     }
