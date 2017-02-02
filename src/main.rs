@@ -12,6 +12,7 @@ fn main() {
     Q_REGISTER_QML!(QBackend);
 
     let frontend = QFrontend::create();
+    engine.add_import_path("./src/");
     engine.set_and_store_property("frontend", frontend.get_qobj());
     engine.load_data(include_str!("RonVim.qml"));
 

@@ -151,7 +151,7 @@ ApplicationWindow {
         function newTab() {
             rightTab.visible = true;
             var editor = rightTab.addTab( "newfile *", cmpEditor).children[0]
-            editor.editorText.close.connect(closeTab(editor))
+            editor.close.connect(closeTab(editor))
 
         }
         function openTab() {
